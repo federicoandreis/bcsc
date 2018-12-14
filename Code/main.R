@@ -2,7 +2,8 @@
 #
 rm(list=ls())
 gc()
-setwd('C:/Users/fa15/Dropbox/ats_paper_1') # office
+#setwd('C:/Users/fa15/Dropbox/ats_paper_1') # office
+setwd('C:/Users/Fede//Dropbox/ats_paper_1') # home
 
 # packages
 library(readr) # read
@@ -24,7 +25,8 @@ source('Code/create_subcohort.R')
 source('Code/refining.R')
 #save.image('data.RData')
 
-########################
+# timeline plots
+# timeline_plot(id_list=c(...), dframe=ss)
 
 # reduced dataframe for analyses
 d <- ss %>% 
@@ -41,5 +43,4 @@ d <- ss %>%
 d$any_compliance <- as.integer(d$any_compliance)
 # 334587x17
 
-rm(cc,ss)
 #save.image('data_clean.RData')

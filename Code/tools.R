@@ -13,152 +13,140 @@ logit <- function(x) log(x/(1+x))
 
 
 # visualise patterns
-viz_pat <- function(sid) {
+#
+# regular invitations are depicted using CIRCLES
+# other invitations are depicted using DIAMONDS
+# permanent exclusions are depicted using FILLED BISQUE SQUARES
+#
+# compliance with respect to an event is indicated by a FILLED symbol
+#
+# special events are GREEN
+# temporary exclusions are BLUE
+# reminders are RED
+# 
+# emigration events are indicated by a FILLED CORAL TRIANGLE
+# death events are indicated by a PURPLE CROSS
+#
+timeline_plot <- function(id_list, # list of ids to visualise timeline for
+                          dframe, # the screening dataset 'ss'
+                          upper_x=11, # upper time limit (x axis)
+                          sort_by_length=TRUE, # should the timelines be sorted?
+                          h_labels=FALSE, # horizontal labels
+                          suppress_ids=FALSE, # don't print ids (use when too many)
+                          inner_margins=c(5,5,1,0),
+                          outer_margins=c(0,2,0,0),...) {
   
-  nnn <- length(sid)
+  sys_mar <- par()$mar
+  sys_oma <- par()$oma
   
-  plot(0,type='n',xlab='Years',ylab='id',
-       xlim=c(0,10.5),ylim=c(1,nnn),axes=FALSE)
-  axis(1,at=0:10)
+  par(mar=inner_margins,oma=outer_margins)
+  n_women <- length(id_list)
   
-  axis(2,at=1:nnn,labels=sid)
-  abline(v=seq(2,10,by=2),lty=2,col='gray')
-  
-  for (i in 1:nnn) {
-    ttp <- oo %>% filter(id==sid[i])
-    
-    segments(0,i,max(ttp$new_time0),i,
-             col='gray')
-    
-    points(ttp$new_time0,rep(i,nrow(ttp)),
-           pch=ttp$comply*15+1,
-           col=ifelse(as.numeric(ttp$sp)==2,'green',
-                      ifelse(ttp$ed==1,'blue',
-                             ifelse(ttp$et==1,'orange',ttp$soll+1))),
-           cex=ifelse(ttp$pure==1,1,.75))
-    
-    points(ttp$time_em[1],i,pch=4,lwd=2,cex=.75)
-    # add death
-    
-  }
-  
-}
-
-viz_pat2 <- function(sid,oo,sort_by_length=FALSE,ux=10.5,
-                     cexreg=1,cexnreg=.75,...) {
-  
-  nnn <- length(sid)
-  
-  plot(0,type='n',xlab='Years',ylab='id',
-       xlim=c(0,ux),ylim=c(1,nnn),axes=FALSE,...)
-  axis(1,at=0:10)
-  
+  plot(0,type='n',xlab='Years',ylab='',
+       xlim=c(0,upper_x),ylim=c(1,n_women),axes=FALSE,...)
+  axis(1,at=0:upper_x)
   
   abline(v=seq(2,10,by=2),lty=2,col='gray')
-  oo <- oo %>% ungroup()
+  
+  mtext('id',side=2,outer=TRUE,las=2)
+  
+  par(mar=sys_mar,oma=sys_oma)
+  
+  w_data_frame <- dframe %>% 
+    filter(id%in%id_list) %>%
+    group_by(id) %>% 
+    mutate(max_time=max(time_from_first)) %>% 
+    ungroup()
   
   if(sort_by_length) {
     
-    tsid <- oo %>% filter(id%in%sid) %>% 
-      group_by(id) %>% 
-      mutate(aa=max(time_from_first)) %>% 
-      ungroup() %>% 
-      arrange(aa) %>% 
-      dplyr::select(id)
-    sid <- unique(tsid$id)
+    id_list <- w_data_frame %>% 
+      arrange(max_time) %>% 
+      dplyr::select(id) %>% 
+      unique %>% unlist
     
   }
   
-  axis(2,at=1:nnn,labels=sid)
+  axis(2,at=1:n_women,
+       labels=if(suppress_ids) {rep('',n_women)} else {id_list},
+       las=ifelse(h_labels,1,2))
   
-  for (i in 1:nnn) {
-    ttp <- oo %>% filter(id==sid[i])
+  for (i in 1:n_women) {
     
-    segments(0,i,max(ttp$time_from_first/365),i,col='gray')
+    tmp_df <- w_data_frame %>% 
+      filter(id==id_list[i])
     
-    col_co <- as.integer(as.factor(ttp$compliance))-1
-    col_sp <- as.integer(as.factor(ttp$special))-1
-    col_pe <- as.integer(as.factor(ttp$permanent))-1
-    col_te <- as.integer(as.factor(ttp$temporary))-1
-    col_rem <- as.integer(as.factor(ttp$reminder))-1
-    col_reg <- as.integer(as.factor(ttp$regular))-1
+    segments(0,i,max(tmp_df$time_from_first/365),i,col='gray')
     
-    time_em <- (ttp$data_em - ttp$data_invito)/365
-    time_de <- (ttp$data_mor - ttp$data_invito)/365
+    ####################################
+    # plot regular invitations - circles
+    tmp_regular <- tmp_df %>% 
+      filter(regular=='Yes')
     
-    points(ttp$time_from_first/365,rep(i,nrow(ttp)),
-           pch=col_co*15+1,
-           col=ifelse(col_sp==1,'green',
-                      ifelse(col_pe==1,'blue',
-                             ifelse(col_te==1,'orange',
-                                    col_rem+1))),
-           cex=ifelse(col_reg==1,cexreg,cexnreg))
+    points(tmp_regular$time_from_first/365,rep(i,nrow(tmp_regular)),
+           pch=ifelse(tmp_regular$permanent=='Yes',15,
+                      ifelse(tmp_regular$compliance=='Yes',19,1)),
+           cex=1.5,
+           col=ifelse(tmp_regular$permanent=='Yes','bisque4',1))
     
-    points(time_em[1],i,pch=17,lwd=2,cex=cexreg,col='coral')
-    points(time_de[1],i,pch=4,lwd=2,cex=cexreg,col='purple')
+    # special - green
+    points(tmp_regular$time_from_first[tmp_regular$special=='Yes']/365,
+           rep(i,sum(tmp_regular$special=='Yes')),
+           pch=ifelse(tmp_regular$compliance=='Yes',19,1),
+           cex=1.5,
+           col='green')
+    # temporary exclusions - blue
+    points(tmp_regular$time_from_first[tmp_regular$temporary=='Yes']/365,
+           rep(i,sum(tmp_regular$temporary=='Yes')),
+           pch=ifelse(tmp_regular$compliance=='Yes',19,1),
+           cex=1.5,
+           col='blue')
     
+    ###################################
+    # plot other invitations - diamonds
+    tmp_other <- tmp_df %>% 
+      filter(regular=='No')
     
-  }
-  
-}
-
-viz_pat3 <- function(sid,oo,sort_by_length=FALSE,ux=10.5,
-                     cexreg=1,cexnreg=.75,h_labels=FALSE,...) {
-  
-  nnn <- length(sid)
-  
-  plot(0,type='n',xlab='Years',ylab='id',
-       xlim=c(0,ux),ylim=c(1,nnn),axes=FALSE,...)
-  axis(1,at=0:10)
-  
-  
-  abline(v=seq(2,10,by=2),lty=2,col='gray')
-  oo <- oo %>% ungroup()
-  
-  if(sort_by_length) {
+    # special - green
+    points(tmp_other$time_from_first[tmp_other$special=='Yes']/365,
+           rep(i,sum(tmp_other$special=='Yes')),
+           pch=ifelse(tmp_other$compliance=='Yes',18,5),
+           cex=ifelse(tmp_other$compliance=='Yes',1.5,1),
+           col='green')
+    # permanent exclusions - bisque4
+    points(tmp_other$time_from_first[tmp_other$permanent=='Yes']/365,
+           rep(i,sum(tmp_other$permanent=='Yes')),
+           pch=15,
+           cex=1.5,col='bisque4')
+    # temporary exclusions - blue
+    points(tmp_other$time_from_first[tmp_other$temporary=='Yes']/365,
+           rep(i,sum(tmp_other$temporary=='Yes')),
+           pch=ifelse(tmp_other$compliance=='Yes',18,5),
+           cex=ifelse(tmp_other$compliance=='Yes',1.5,1),
+           col='blue')
+    # reminders - red
+    points(tmp_other$time_from_first[tmp_other$reminder=='Yes']/365,
+           rep(i,sum(tmp_other$reminder=='Yes')),
+           pch=ifelse(tmp_other$compliance=='Yes',18,5),
+           cex=ifelse(tmp_other$compliance=='Yes',1.5,1),
+           col='red')
     
-    tsid <- oo %>% filter(id%in%sid) %>% 
-      group_by(id) %>% 
-      mutate(aa=max(time_from_first)) %>% 
-      ungroup() %>% 
-      arrange(aa) %>% 
-      dplyr::select(id)
-    sid <- unique(tsid$id)
-    
-  }
-  
-  axis(2,at=1:nnn,labels=sid,las=ifelse(h_labels,1,2))
-  
-  for (i in 1:nnn) {
-    ttp <- oo %>% filter(id==sid[i])
-    
-    segments(0,i,max(ttp$time_from_first/365),i,col='gray')
-    
-    col_co <- as.integer(as.factor(ttp$compliance))-1
-    col_sp <- as.integer(as.factor(ttp$special))-1
-    col_pe <- as.integer(as.factor(ttp$permanent))-1
-    col_te <- as.integer(as.factor(ttp$temporary))-1
-    col_rem <- as.integer(as.factor(ttp$reminder))-1
-    col_reg <- as.integer(as.factor(ttp$regular))-1
-    
-    time_em <- (ttp$data_em - ttp$data_invito)/365
-    time_de <- (ttp$data_mor - ttp$data_invito)/365
-    
-    points(ttp$time_from_first/365,rep(i,nrow(ttp)),
-           pch=col_co*15+1,
-           col=ifelse(col_sp==1,'green',
-                      ifelse(col_pe==1,'blue',
-                             ifelse(col_te==1,'orange',
-                                    col_rem+1))),
-           cex=ifelse(col_reg==1,cexreg,cexnreg))
-    
-    points(time_em[1],i,pch=17,lwd=2,cex=cexreg,col='coral')
-    points(time_de[1],i,pch=4,lwd=2,cex=cexreg,col='purple')
-    
+    ####################
+    # emigration - coral triangles
+    time_emigration <- (tmp_df$data_em - tmp_df$data_invito)[1]/365
+    points(time_emigration,i,
+           pch=17,
+           cex=1.5,
+           col='coral')
+    # death - purple crosses
+    time_death <- (tmp_df$data_mor - tmp_df$data_invito)[1]/365
+    points(time_death,i,
+           pch=4,lwd=2,
+           cex=1.5,
+           col='purple')
     
   }
   
 }
 
-### viz with symbols rather than colours
-# TBC
+
