@@ -452,5 +452,23 @@ ss <- ss %>%
   ungroup
 # 334587x45
 
-rm(backup)
+# clean first invitation after death
+
+id_death_before <- ss %>% 
+  filter(time_from_first==0) %>% 
+  filter(data_mor<data_invito) %>% 
+  dplyr::select(id) %>% 
+  unlist %>% 
+  unique
+
+ss <- ss %>% 
+  filter(id%notin%id_death_before)
+# 334568x45
+
+# update cohort
+cc <- cc %>% 
+  filter(id%in%(ss$id %>% unlist %>% unique))
+# 79385x19
+
+rm(backup,id_death_before)
 
