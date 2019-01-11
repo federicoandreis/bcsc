@@ -9,6 +9,8 @@ ss <- left_join(sub_screening,
                 CallBackLetter,STATO_CIVILE,
                 NAZIONALITA,data_im,data_em,
                 data_mor,incidenza)
+# add data_nas, IdScreeningPositive
+
 # 345345x13
 
 # flag compliance - defined as non-missing data_esame
