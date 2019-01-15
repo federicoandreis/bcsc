@@ -33,6 +33,9 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
                           sort_by_length=TRUE, # should the timelines be sorted?
                           h_labels=FALSE, # horizontal labels
                           suppress_ids=FALSE, # don't print ids (use when too many)
+                          ########################################
+                          diagnosis=TRUE, #whether to plot the time to diagnosis
+                          ########################################
                           inner_margins=c(5,5,1,0),
                           outer_margins=c(0,2,0,0),...) {
   
@@ -83,6 +86,10 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
     tmp_regular <- tmp_df %>% 
       filter(regular=='Yes')
     
+    ########################################
+    #permanent exclusion is designated with square
+    #regular invitations with circles 
+    # if attended - filled, if not - blank
     points(tmp_regular$time_from_first/365,rep(i,nrow(tmp_regular)),
            pch=ifelse(tmp_regular$permanent=='Yes',15,
                       ifelse(tmp_regular$compliance=='Yes',19,1)),
@@ -92,13 +99,13 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
     # special - green
     points(tmp_regular$time_from_first[tmp_regular$special=='Yes']/365,
            rep(i,sum(tmp_regular$special=='Yes')),
-           pch=ifelse(tmp_regular$compliance=='Yes',19,1),
+           pch=ifelse(tmp_regular[tmp_regular$special=='Yes',]$compliance=='Yes',19,1),
            cex=1.5,
            col='green')
     # temporary exclusions - blue
     points(tmp_regular$time_from_first[tmp_regular$temporary=='Yes']/365,
            rep(i,sum(tmp_regular$temporary=='Yes')),
-           pch=ifelse(tmp_regular$compliance=='Yes',19,1),
+           pch=ifelse(tmp_regular[tmp_regular$temporary=='Yes',]$compliance=='Yes',19,1),
            cex=1.5,
            col='blue')
     
@@ -110,8 +117,8 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
     # special - green
     points(tmp_other$time_from_first[tmp_other$special=='Yes']/365,
            rep(i,sum(tmp_other$special=='Yes')),
-           pch=ifelse(tmp_other$compliance=='Yes',18,5),
-           cex=ifelse(tmp_other$compliance=='Yes',1.5,1),
+           pch=ifelse(tmp_other[tmp_other$special=='Yes',]$compliance=='Yes',18,5),
+           cex=ifelse(tmp_other[tmp_other$special=='Yes',]$compliance=='Yes',1.5,1),
            col='green')
     # permanent exclusions - bisque4
     points(tmp_other$time_from_first[tmp_other$permanent=='Yes']/365,
@@ -121,14 +128,14 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
     # temporary exclusions - blue
     points(tmp_other$time_from_first[tmp_other$temporary=='Yes']/365,
            rep(i,sum(tmp_other$temporary=='Yes')),
-           pch=ifelse(tmp_other$compliance=='Yes',18,5),
-           cex=ifelse(tmp_other$compliance=='Yes',1.5,1),
+           pch=ifelse(tmp_other[tmp_other$temporary=='Yes',]$compliance=='Yes',18,5),
+           cex=ifelse(tmp_other[tmp_other$temporary=='Yes',]$compliance=='Yes',1.5,1),
            col='blue')
     # reminders - red
     points(tmp_other$time_from_first[tmp_other$reminder=='Yes']/365,
            rep(i,sum(tmp_other$reminder=='Yes')),
-           pch=ifelse(tmp_other$compliance=='Yes',18,5),
-           cex=ifelse(tmp_other$compliance=='Yes',1.5,1),
+           pch=ifelse(tmp_other[tmp_other$reminder=='Yes',]$compliance=='Yes',18,5),
+           cex=ifelse(tmp_other[tmp_other$reminder=='Yes',]$compliance=='Yes',1.5,1),
            col='red')
     
     ####################
@@ -145,8 +152,18 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
            cex=1.5,
            col='purple')
     
+    ########################################
+    #### Diagnosis is designated with pink snowflake
+    ############################################## 
+    if (diagnosis) {
+      time_diagnosis <- (tmp_df$incidenza - tmp_df$data_invito)[1]/365
+      points(time_diagnosis,i,
+             pch=8,lwd=1,
+             cex=1.5,
+             col='deeppink')
+    }
+    
   }
   
 }
-
 
