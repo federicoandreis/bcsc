@@ -163,6 +163,23 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
              col='deeppink')
     }
     
+    #####################################################
+    # add green cicrle with plus sign in it for suspicious results from the examination
+    # according to the variable IdScreeningPositive
+    #########################################
+    if(any(tmp_df$IdScreeningPositive>0)) {
+      k <- unique(tmp_df$IdScreeningPositive[tmp_df$IdScreeningPositive>0])
+      visits <- tmp_df[tmp_df$id_prestazione%in%k,]
+      points(visits$time_from_first/365,
+             rep(i,length(k)),
+             pch=10,
+             cex=1.5,
+             col='green3'
+      )  
+    }
+    
+    
+    
   }
   
 }
