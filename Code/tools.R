@@ -166,6 +166,7 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
     #####################################################
     # add green cicrle with plus sign in it for suspicious results from the examination
     # according to the variable IdScreeningPositive
+    # add purple "o" in the center of the examinations which are provoked by positive mammogram
     #########################################
     if(any(tmp_df$IdScreeningPositive>0)) {
       k <- unique(tmp_df$IdScreeningPositive[tmp_df$IdScreeningPositive>0])
@@ -175,7 +176,15 @@ timeline_plot <- function(id_list, # list of ids to visualise timeline for
              pch=10,
              cex=1.5,
              col='green3'
-      )  
+      )
+      additional.examinations <- tmp_df$time_from_first[tmp_df$IdScreeningPositive>0]
+      points(additional.examinations/365,
+             rep(i,length(additional.examinations)),
+             pch="o",
+             cex=.5,
+             col='purple'
+      )
+      
     }
     
     
